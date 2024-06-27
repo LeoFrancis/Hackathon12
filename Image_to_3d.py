@@ -6,7 +6,16 @@ import matplotlib.pyplot as plt
 from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 from PIL import Image
 
-Ground_clearence = 60
+
+GROUND_CLEARENCE = 20
+buffer_size = 10
+buffer_x = []
+buffer_y = []
+
+def lanGen(vector_data, min_distance):
+    # Convert your vector data to a structured text description
+    return f"Observing obstruction. Shortest distance to high object: {min_distance:.2f} meters."
+
 
 # Check the current working directory
 current_working_directory = os.getcwd()
@@ -62,6 +71,12 @@ for image_file in image_files:
     y = y.flatten()
     z = depth_map.flatten()
 
+    # Print all x_filtered and y_filtered values
+    '''print('***********************************')
+    print(f"All x values for {image_file}: {x}")
+    print(f"All y values for {image_file}: {y}")
+    print(f"All z values for {image_file}: {z}")'''
+
     # Adjust y values
     y_adjusted = np.array([v - 50 if (50 < v < 250) else v for v in y])
 
@@ -71,8 +86,8 @@ for image_file in image_files:
     y_filtered = y_adjusted[filtered_indices]
     z_filtered = z[filtered_indices]
 
-    # Separate the points with height greater than 30
-    high_points_indices = y_filtered > 30
+    # Separate the points with height greater than GROUND_CLEARENCE
+    high_points_indices = y_filtered > GROUND_CLEARENCE
     x_high = x_filtered[high_points_indices]
     y_high = y_filtered[high_points_indices]
     z_high = z_filtered[high_points_indices]
@@ -81,13 +96,18 @@ for image_file in image_files:
     y_low = y_filtered[~high_points_indices]
     z_low = z_filtered[~high_points_indices]
 
-    # Get the top 5 y values
-    top_5_y_values = np.sort(y_filtered)[-5:]
-    print(f"Top 5 Y values for {image_file}: {top_5_y_values}")
+    z_final = z_high[z_high != 0]
 
-    # Print all x_filtered and y_filtered values
-    print(f"All x_filtered values for {image_file}: {x_filtered}")
-    print(f"All y_filtered values for {image_file}: {y_filtered}")
+    '''z_final = np.array
+    # Get the top 5 y values
+    for v in z_high:
+        if ( z_high[v] > 0.0):
+            z_final[v] = z_high[v]'''
+
+    closest_distance = np.sort(z_final)[:]
+    print(closest_distance)
+    #final_array = z_final[:1]
+    print(f"Closest high point is detected as per image {image_file}: {closest_distance[0:1]}")
 
     # Plot the filtered points in 2D and the original image
     fig, ax = plt.subplots(1, 2, figsize=(20, 10))
@@ -106,8 +126,8 @@ for image_file in image_files:
     ax[1].grid(True)
 
     # Set the axis limits
-    ax[1].set_xlim(left=-w, right=0)  # Ensure the x-axis starts from 0 to the right
-    ax[1].set_ylim(bottom=0, top=np.max(z_low))  # Ensure the y-axis (depth) starts from 0 to the bottom
+    ax[1].set_xlim(left=0, right=-w)  # Ensure the x-axis starts from 0 to the right
+    ax[1].set_ylim(bottom=np.max(z_low), top=0)  # Ensure the y-axis (depth) starts from 0 to the bottom
     
     plt.gca().invert_yaxis()  # Invert y-axis to match image coordinates
     plt.show()
