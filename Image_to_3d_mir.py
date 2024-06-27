@@ -7,7 +7,8 @@ from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 from PIL import Image
 
 
-GROUND_CLEARENCE = 20
+MINIMUM_CLEARENCE = 20
+GROUND_CLEARENCE = 40
 buffer_size = 10
 buffer_x = []
 buffer_y = []
@@ -75,16 +76,26 @@ for image_file in image_files:
     #y_adjusted = np.array([v - 50 if (50 < v < 250) else v for v in y])
 
     # Filter points where y > 10 and z < 10
-    filtered_indices = (z > 10) & (y < 10)
+    filtered_indices = (z > 10) & (y < 20)
     x_filtered = x[filtered_indices]
     y_filtered = y[filtered_indices]
     z_filtered = z[filtered_indices]
 
     # Separate the points with height greater than GROUND_CLEARENCE
-    high_points_indices = z_filtered > GROUND_CLEARENCE
+    high_points_indices = z_filtered > MINIMUM_CLEARENCE
     x_high = x_filtered[high_points_indices]
     y_high = y_filtered[high_points_indices]
     z_high = z_filtered[high_points_indices]
+
+    # Identifying the relevant indices
+    Relevant_indices = (70 < x_high) & (x_high < 130) & (y_high < 20) & (z_high > GROUND_CLEARENCE) 
+    x_relevant = x_high[Relevant_indices]
+    y_relevant = y_high[Relevant_indices]
+    z_relevant = z_high[Relevant_indices]
+    sorted_indices = np.argsort(z_relevant)
+    closest_distance_index = sorted_indices[0:1]
+    closest_y = y_relevant[closest_distance_index]
+    print(f"Closest high point is detected as per image {image_file}: {closest_y}")
 
     x_low = x_filtered[~high_points_indices]
     y_low = y_filtered[~high_points_indices]
@@ -96,18 +107,25 @@ for image_file in image_files:
     y_combined = np.append(y, y_high)
     z_combined = np.append(z, z_high)
 
-    closest_distance = np.sort(z_final)[:]
-    print(closest_distance)
-
     print(f"Original Image - {image_file}")
 
-    fig = plt.figure(figsize=(10, 7))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x, y, z, c=z, cmap='viridis')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    fig = plt.figure(figsize=(15, 7))
+
+    # Plot the original image
+    ax1 = fig.add_subplot(121)
+    ax1.imshow(img)
+    ax1.set_title(f"Original Image - {image_file}")
+    ax1.axis('off')
+
+    # Plot the 3D points
+    ax2 = fig.add_subplot(122, projection='3d')
+    ax2.scatter(x, y, z, c=z, cmap='Greens', label='Existing')
+    ax2.scatter(x_high, y_high, z_high, c=z_high, cmap='Reds', label='High')
+    ax2.set_xlabel('X')
+    ax2.set_ylabel('Y')
+    ax2.set_zlabel('Z')
     plt.title('3D Depth Map')
+    plt.legend()
     plt.show()
 
     # Wait for a keypress to move to the next image
