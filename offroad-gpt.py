@@ -3,7 +3,7 @@ import requests
 import os
 from openai import OpenAI
 
-api_key = "sk-proj-HG5VeNNov3c3khr65MfDT3BlbkFJD88GVTwzBZ2aGwxRUqVZ"
+api_key = "Enter api key here"
 
 
 def encode_image(image_path):
@@ -41,7 +41,7 @@ response = client.chat.completions.create(
         },
         {
             "role": "assistant",
-            "content": "\{terrain_type: 'dirt track/unpaved road', advice: 'Obstacle is higher than ground clearance. Risk of collision and damage to the car'\}",
+            "content": "{\"terrain_type\": 'dirt track/unpaved road', \"advice\": 'Obstacle is higher than ground clearance. Risk of collision and damage to the car'\}",
         },
         {
             "role": "user",
